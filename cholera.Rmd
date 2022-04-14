@@ -1,0 +1,129 @@
+---
+title: "The Death Rate of Cholera as Tested Through Attack Rate and HDI"
+author: "Kamal Kandpal"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+```
+
+## Introduction
+
+This is a mini study conducted to find how Attack Rate directly affects the Death Rate of Cholera. The idea stemmed from a larger study conducted in collaboration with the University of Alberta and Youreka Canada to find the Efficacy of the Cholera Vaccine as Tested through HDI, Death Rate, and Attack Rate. Concepts of data visualization and statistical analysis in R along with R Markdown were used for this document. 
+
+## Environment Setup
+
+The ggplot2 package within the tidyverse package was used for the visualization aspect of this document. The rest of our statistical tests are available within tidyverse.
+
+```{r packages, message=FALSE}
+#install.packages("tidyverse")
+#install.packages("ggplot2")
+
+library(tidyverse)
+library(ggplot2)
+```
+
+We then needed to import the data used. We used Cholera data on the Yemeni population from [data.world](https://data.world/) as it is quite a reputable website with an abundance of free datasets for all kinds of use. 
+
+```{r data, eval=TRUE, include=FALSE}
+yemen_data <- read.csv("yemen_data.csv")
+```
+
+Here is a quick summary of the data to get a good look of what it contains.
+
+```{r echo=FALSE, warning=FALSE}
+summary(yemen_data)
+```
+
+We can also display a short data frame highlighting key parts of the factors being analyzed.
+
+```{r dataframe, echo=FALSE, warning=FALSE}
+Attack_Rate <- c(min(yemen_data$attack_rate_fraction), max(yemen_data$attack_rate_fraction), mean(yemen_data$attack_rate_fraction), median(yemen_data$death_rate), mode(yemen_data$death_rate), sd(yemen_data$attack_rate_fraction))
+
+Death_Rate <- c(min(yemen_data$death_rate), max(yemen_data$death_rate), mean(yemen_data$death_rate), median(yemen_data$death_rate), mode(yemen_data$death_rate), sd(yemen_data$death_rate))
+
+attack_death_df <- data.frame(Attack_Rate, Death_Rate)
+
+row.names(attack_death_df)[1] = "Minimum"
+row.names(attack_death_df)[2] = "Maximum"
+row.names(attack_death_df)[3] = "Mean"
+row.names(attack_death_df)[4] = "Median"
+row.names(attack_death_df)[5] = "Mode"
+row.names(attack_death_df)[6] = "Standard Deviation"
+
+attack_death_df
+
+```
+
+## Comparison: Death Rate V.S. Attack Rate
+
+The factor tested was the Attack Rate and the impact it had on Death Rate. Attack Rate, expressed as a percentage, is defined as the amount of people that get ill after contracting the disease. Death Rate, expressed as a percentage, is defined as the amount of the population that died after contracting Cholera. For the purpose of this study, Death Rate has been converted into a percentage from an integer value. 
+
+### Two-Sample T-Test 
+
+A two-sample t-test was conducted to check if there was a significant difference between the means of death rate and attack rate.
+
+```{r t-test #1, echo=TRUE}
+ t.test(yemen_data$attack_rate_fraction, yemen_data$death_rate, alternative = "two.sided", var.equal = TRUE)
+```
+
+As we are able to see, we had a very small p-value. Therefore, there was a significant difference in the means of the Attack Rate (M = 0.02, SD = 	0.011) and the Death Rate (M 0.003, SD = 0.001). The other takeaway we were able to have was that there was the presence of a relationship, although it not possible to confirm with just a t-test.
+
+### Pearson's Correlation Test
+
+After finding a significant difference in the means and realizing that there was a relationship present, the next step was to find out what that relationship would have been. The Pearson's Correlation was chosen as it would have told us of the relationship when measured linearly.
+
+```{r pearson, warning=FALSE}
+cor.test(yemen_data$attack_rate_fraction, yemen_data$death_rate, method="pearson")
+```
+
+
+From what we can see, there seems to be a very strong negative correlation, taken from the quite large negative r-value. However, we did not want to take this as a final result as we could further confirm this idea with another similar test.
+
+### Spearman's Correlation Test
+
+Once we knew that a relationship existed, we applied a Spearman's Correlation Test to find out what that relationship could have possibly been. This test is non-parametric, meaning it does not assume a linear relationship, therefore giving us the raw relationship.
+
+```{r spearman, warning=FALSE}
+cor.test(yemen_data$attack_rate_fraction, yemen_data$death_rate, method = "spearman")
+```
+
+We were able to achieve an even negative r-value. This test allowed us to fully confirm our findings and accept that there was a strong negative correlation between the two factors. 
+
+### Linear Regression
+
+Finally, after we confirmed the relationship that existed, it was time to present our findings. In this case, in the form of a linear regression. The data is easy to read and presentable while being functional.
+
+```{r regression, warning=FALSE}
+ggplot(data = yemen_data, mapping=aes(x=attack_rate_fraction, y=death_rate, color=attack_rate_fraction)) +
+  geom_point(position="jitter") +
+  geom_smooth(method=lm, formula = y ~ x, color='black') +
+  labs(x="Attack Rate", y="Death Rate", color="") +
+  ggtitle("Relationship between Death Rate and Attack Rate of Cholera") +
+  theme_classic() +
+  theme(legend.position = "none") +
+  theme(plot.title = element_text(size = 15, face = "bold"))
+```
+
+## Conclusion
+
+The relationship between Death Rate and Attack Rate is displayed as the following:
+
+- as the Attack Rate of Cholera increases, the Death Rate of Cholera decreases
+
+Finding this out, some may think this is counter-intuitive, thinking that the relationship should be more closely related to the following:
+
+- as the Attack Rate of Cholera increases, the Death Rate of Cholera increases
+
+The Death Rate of any disease is most likely to be higher in its beginnings due to the limited exposure, which could influence the Death Rate because of factors like age, improper treatment, and severe cases. However, as the disease progresses, it is able to affect a much greater population, giving us a much more accurate Death Rate as it is able to impact a variety of people. 
+
+
+
+
+
+
+
+
+
+
+
